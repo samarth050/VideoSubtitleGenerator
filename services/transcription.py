@@ -3,10 +3,12 @@ from faster_whisper import WhisperModel
 
 class Transcriber:
 
-    def __init__(self):
+    def __init__(
+            self,
+            model_name="small"):
 
         self.model = WhisperModel(
-            "base",
+            model_name,
             device="cpu",
             compute_type="int8"
         )

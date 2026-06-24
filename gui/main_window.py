@@ -20,6 +20,8 @@ class MainWindow:
 
         self.transcriber = None
 
+        self.current_model = None
+
         self.video_path = tk.StringVar()
 
         # -------------------------
@@ -58,6 +60,44 @@ class MainWindow:
             text="Generate English Subtitles",
             command=self.start_transcription
         )
+
+        # -------------------------
+        # Whisper Model
+        # -------------------------
+
+        self.selected_model = tk.StringVar(
+            value="small"
+        )
+
+        tk.Label(
+            root,
+            text="Whisper Model"
+        ).pack()
+
+        model_frame = tk.Frame(root)
+        model_frame.pack()
+
+        tk.OptionMenu(
+            model_frame,
+            self.selected_model,
+            "tiny",
+            "base",
+            "small",
+            "medium",
+            "large-v3"
+        ).pack()
+
+        self.model_info_label = tk.Label(
+            root,
+            text="Recommended - Good balance of speed and accuracy"
+        )
+
+        self.selected_model.trace_add(
+            "write",
+            self.on_model_change
+        )        
+
+        self.model_info_label.pack()        
 
         self.generate_btn.pack(pady=10)
 
@@ -195,15 +235,18 @@ class MainWindow:
             )
 
             low, high = (
-                VideoValidator.estimate_processing_time(
-                    duration,
-                    "base"
-                )
+                    VideoValidator.estimate_processing_time(
+                        duration,
+                        self.selected_model.get()
+                    )
             )
 
             validation_text = (
+                f"Model: "
+                f"{self.selected_model.get().upper()}\n"
                 f"{message}\n"
-                f"File Size: {size_gb:.2f} GB\n"
+                f"File Size: "
+                f"{size_gb:.2f} GB\n"
                 f"Duration: "
                 f"{VideoValidator.format_duration(duration)}\n"
                 f"Estimated Processing Time: "
@@ -233,11 +276,23 @@ class MainWindow:
                 "Loading Model..."
             )
 
-            if self.transcriber is None:
+            if (
+                self.transcriber is None
+                or
+                self.current_model
+                !=
+                self.selected_model.get()
+            ):
+
+                self.current_model = (
+                    self.selected_model.get()
+                )
 
                 self.transcriber = (
-                    Transcriber()
-                )
+                    Transcriber(
+                        self.current_model
+                    )
+                )            
 
             self.update_status(
                 "Transcribing..."
@@ -311,9 +366,28 @@ class MainWindow:
                 )
             )
 
+
     # ----------------------------------
     # Status
     # ----------------------------------
+
+    def on_model_change(self, *args):
+
+        descriptions = {
+            "tiny": "Fastest, lowest accuracy",
+            "base": "Fast, good quality",
+            "small": "Recommended",
+            "medium": "High quality",
+            "large-v3": "Best quality, slowest"
+        }
+
+        self.model_info_label.config(
+            text=descriptions.get(
+                self.selected_model.get(),
+                ""
+            )
+        )
+
     def update_language(self, language):
 
         self.root.after(

@@ -140,19 +140,6 @@ class VideoValidator:
         )
 
     @staticmethod
-    def estimate_transcription_time(
-            duration_seconds):
-
-        estimate_minutes = (
-            duration_seconds / 60
-        ) * 0.25
-
-        return round(
-            estimate_minutes,
-            1
-        )
-
-    @staticmethod
     def estimate_processing_time(
             duration_seconds,
             model_name="base"):
