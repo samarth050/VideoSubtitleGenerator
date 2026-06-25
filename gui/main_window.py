@@ -1,8 +1,9 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, ttk
 from tkinter.scrolledtext import ScrolledText
 import threading
 import os
+import time
 from services.transcription import Transcriber
 from services.subtitle_writer import save_srt
 from services.video_validator import VideoValidator
@@ -99,7 +100,30 @@ class MainWindow:
 
         self.model_info_label.pack()        
 
-        self.generate_btn.pack(pady=10)
+        button_frame = tk.Frame(root)
+        button_frame.pack(pady=10)
+
+        self.generate_btn = tk.Button(
+            button_frame,
+            text="Generate English Subtitles",
+            command=self.start_transcription
+        )
+
+        self.generate_btn.pack(
+            side=tk.LEFT,
+            padx=5
+        )
+
+        self.reset_btn = tk.Button(
+            button_frame,
+            text="Reset",
+            command=self.reset_gui
+        )
+
+        self.reset_btn.pack(
+            side=tk.LEFT,
+            padx=5
+        )
 
         # -------------------------
         # Status
@@ -137,6 +161,23 @@ class MainWindow:
 
         self.language_label.pack(pady=5)
 
+        self.progress_bar = ttk.Progressbar(
+            root,
+            orient="horizontal",
+            length=500,
+            mode="determinate",
+            maximum=100
+        )
+
+        self.progress_bar.pack(pady=5)
+
+        self.time_label = tk.Label(
+            root,
+            text="Elapsed: 00:00   Remaining: --:--"
+        )
+
+        self.time_label.pack()        
+
         # -------------------------
         # Transcript Preview
         # -------------------------
@@ -152,6 +193,66 @@ class MainWindow:
             expand=True,
             padx=10,
             pady=10
+        )
+
+    def reset_gui(self):
+
+        self.video_path.set("")
+
+        self.file_label.config(
+            text="No file selected"
+        )
+
+        self.preview.delete(
+            "1.0",
+            tk.END
+        )
+
+        self.status_label.config(
+            text="Ready"
+        )
+
+        self.validation_label.config(
+            text=""
+        )
+
+        self.language_label.config(
+            text="Detected Language: Unknown"
+        )
+
+        self.progress_bar["value"] = 0
+
+        self.time_label.config(
+            text="Elapsed: 00:00   Remaining: --:--"
+        )
+
+        self.selected_model.set("small")
+
+        self.generate_btn.config(
+            state="normal"
+        )
+        self.progress_bar["value"] = 0
+
+        self.status_label.config(
+            text="Ready"
+        )
+
+        self.validation_label.config(
+            text=""
+        )
+
+        self.time_label.config(
+            text="Elapsed: 00:00   Remaining: --:--"
+        )
+
+
+    def update_progress(self, percent):
+
+        self.root.after(
+            0,
+            lambda: self.progress_bar.configure(
+                value=percent
+            )
         )
 
     # ----------------------------------
@@ -298,38 +399,65 @@ class MainWindow:
                 "Transcribing..."
             )
 
-            segments, info = (
+            self.start_time = time.time()
+
+            segments_generator, info = (
                 self.transcriber.transcribe(
                     self.video_path.get()
                 )
             )
+
+            segments = []
             #print("Segments type:", type(segments))
             #print("Segments count:", len(segments))
-
-            if segments:
-                #print("First segment:", segments[0])
-                pass
-
-            srt_file = save_srt(
-                self.video_path.get(),
-                segments
-            )
-
 
             self.update_language(
                 info.language
             )
 
             self.clear_preview()
+            self.update_progress(0)
+            for segment in segments_generator:
 
-            for segment in segments:
+                segments.append(segment)
+
+                percent = (
+                    segment.end / duration
+                ) * 100
+
+                self.update_progress(percent)
+                self.update_time(percent)
+
+                self.update_status(
+                    f"Transcribing... {percent:.1f}%"
+                )
 
                 self.add_preview_text(
                     segment.text.strip()
                 )
 
+            self.update_progress(100)
+
+            srt_file = save_srt(
+                self.video_path.get(),
+                segments
+            )
+
             self.update_status(
                 "Completed"
+            )
+
+            total_time = time.time() - self.start_time
+
+            minutes = int(total_time // 60)
+            seconds = int(total_time % 60)
+
+            self.root.after(
+                0,
+                lambda:
+                self.time_label.config(
+                    text=f"Completed in {minutes:02}:{seconds:02}"
+                )
             )
 
             self.root.after(
@@ -366,6 +494,36 @@ class MainWindow:
                 )
             )
 
+    def update_time(
+            self,
+            percent):
+
+        if percent <= 0:
+            return
+
+        elapsed = time.time() - self.start_time
+
+        remaining = (
+            elapsed / percent
+        ) * (100 - percent)
+
+        elapsed_minutes = int(elapsed // 60)
+        elapsed_seconds = int(elapsed % 60)
+
+        remaining_minutes = int(remaining // 60)
+        remaining_seconds = int(remaining % 60)
+
+        self.root.after(
+            0,
+            lambda:
+            self.time_label.config(
+                text=
+                f"Elapsed: "
+                f"{elapsed_minutes:02}:{elapsed_seconds:02}    "
+                f"Remaining: "
+                f"{remaining_minutes:02}:{remaining_seconds:02}"
+            )
+        )
 
     # ----------------------------------
     # Status

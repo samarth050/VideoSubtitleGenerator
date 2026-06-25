@@ -21,4 +21,4 @@ class Transcriber:
             beam_size=5
         )
 
-        return list(segments), info
+        return segments, info
