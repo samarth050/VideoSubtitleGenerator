@@ -8,6 +8,11 @@ from services.transcription import Transcriber
 from services.subtitle_writer import save_srt
 from services.video_validator import VideoValidator
 
+from gui.generate_tab import GenerateTab
+from gui.subtitle_editor_tab import SubtitleEditorTab
+from gui.transcript_tab import TranscriptTab
+from gui.settings_tab import SettingsTab
+from gui.about_tab import AboutTab
 
 class MainWindow:
 
@@ -17,7 +22,59 @@ class MainWindow:
 
         root.title("Video Subtitle Generator")
 
-        root.geometry("1000x700")
+        root.geometry("1100x750")
+
+        self.notebook = ttk.Notebook(root)
+
+        self.notebook.pack(
+            fill="both",
+            expand=True
+        )
+
+        self.generate_tab = GenerateTab(
+            self.notebook
+        )
+
+        self.editor_tab = SubtitleEditorTab(
+            self.notebook
+        )
+
+        self.transcript_tab = TranscriptTab(
+            self.notebook
+        )
+
+        self.settings_tab = SettingsTab(
+            self.notebook
+        )
+
+        self.about_tab = AboutTab(
+            self.notebook
+        )
+
+        self.notebook.add(
+            self.generate_tab,
+            text="Generate"
+        )
+
+        self.notebook.add(
+            self.editor_tab,
+            text="Subtitle Editor"
+        )
+
+        self.notebook.add(
+            self.transcript_tab,
+            text="Transcript"
+        )
+
+        self.notebook.add(
+            self.settings_tab,
+            text="Settings"
+        )
+
+        self.notebook.add(
+            self.about_tab,
+            text="About"
+        )
 
         self.transcriber = None
 
