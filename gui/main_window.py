@@ -33,6 +33,10 @@ class MainWindow:
             self.notebook
         )
 
+        self.generate_tab.on_srt_created = (
+            self.open_generated_srt
+        )
+
         self.transcript_tab = TranscriptTab(
             self.notebook
         )
@@ -70,6 +74,17 @@ class MainWindow:
             text="About"
         )
 
+    def open_generated_srt(
+            self,
+            filename):
+
+        self.editor_tab.load_file(
+            filename
+        )
+
+        self.notebook.select(
+            self.editor_tab
+        )
 
  
 

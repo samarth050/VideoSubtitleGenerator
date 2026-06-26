@@ -34,9 +34,10 @@ class GenerateTab(tk.Frame):
         # Runtime Variables
         # ---------------------------------
 
+        
         self.start_time: float | None = None
         self.generated_srt = None
-
+        self.on_srt_created = None
         # ---------------------------------
         # Build User Interface
         # ---------------------------------
@@ -496,7 +497,18 @@ class GenerateTab(tk.Frame):
                 self.video_path.get(),
                 segments
             )
+
             self.generated_srt = srt_file
+
+            # Notify MainWindow that a new subtitle file is ready
+            if self.on_srt_created:
+
+                self.after(
+                    0,
+                    lambda:
+                    self.on_srt_created(srt_file) if self.on_srt_created else None
+                )
+
             self.update_status(
                 "Completed"
             )
