@@ -122,30 +122,56 @@ class SubtitleEditorTab(tk.Frame):
 
         self.subtitle_tree = ttk.Treeview(
             left,
-            columns=("preview",),
-            show="tree headings"
+            columns=(
+                "number",
+                "start",
+                "end",
+                "preview"
+            ),
+            show="headings"
         )
 
         self.subtitle_tree.heading(
-            "#0",
+            "number",
             text="No"
         )
 
         self.subtitle_tree.heading(
+            "start",
+            text="Start"
+        )
+
+        self.subtitle_tree.heading(
+            "end",
+            text="End"
+        )
+
+        self.subtitle_tree.heading(
             "preview",
-            text="Subtitle Preview"
+            text="Preview"
         )
 
         self.subtitle_tree.column(
-            "#0",
-            width=60,
+            "number",
+            width=50,
             anchor="center"
+        ) 
+
+        self.subtitle_tree.column(
+            "start",
+            width=90
+        )
+
+        self.subtitle_tree.column(
+            "end",
+            width=90
         )
 
         self.subtitle_tree.column(
             "preview",
-            width=240
+            width=260
         )
+
 
         self.subtitle_tree.pack(
             fill="both",
@@ -157,6 +183,25 @@ class SubtitleEditorTab(tk.Frame):
             self.on_select
         )
 
+        self.bind_all(
+            "<Control-Right>",
+            lambda e: self.next_subtitle()
+        )
+
+        self.bind_all(
+            "<Control-Left>",
+            lambda e: self.previous_subtitle()
+        )
+
+        self.bind_all(
+            "<Control-s>",
+            lambda e: self.save()
+        )
+
+        self.subtitle_tree.bind(
+            "<Double-1>",
+            self.on_select
+        )
         # =================================================
         # RIGHT PANEL
         # =================================================
@@ -235,6 +280,10 @@ class SubtitleEditorTab(tk.Frame):
             expand=True
         )
 
+        self.text_editor.bind(
+            "<<Modified>>",
+            self.text_changed
+        )
         # -------------------------------------------------
         # Navigation Buttons
         # -------------------------------------------------
@@ -330,15 +379,18 @@ class SubtitleEditorTab(tk.Frame):
             )
 
             if len(preview) > 45:
-
                 preview = preview[:45] + "..."
 
             self.subtitle_tree.insert(
                 "",
                 "end",
                 iid=str(index),
-                text=str(subtitle.number),
-                values=(preview,)
+                values=(
+                    subtitle.number,
+                    subtitle.start,
+                    subtitle.end,
+                    preview
+                )
             )
 
         self.status.config(
@@ -379,7 +431,10 @@ class SubtitleEditorTab(tk.Frame):
                 )
 
         self.status.config(
-            text="Subtitle file saved"
+            text=(
+                f"Saved successfully   |   "
+                f"{len(self.subtitles)} subtitles"
+            )
         )
 
     def save_as(self):
@@ -407,6 +462,8 @@ class SubtitleEditorTab(tk.Frame):
 
     def on_select(self, event):
 
+        if self.current_index != -1:
+            self.save_current()   
         selected = self.subtitle_tree.selection()
 
         if not selected:
@@ -441,7 +498,7 @@ class SubtitleEditorTab(tk.Frame):
             "1.0",
             subtitle.text
         )
-
+        self.text_editor.focus_set()
 
     def save_current(self):
 
@@ -462,9 +519,28 @@ class SubtitleEditorTab(tk.Frame):
         ).strip()
 
         self.status.config(
-            text=f"Subtitle {subtitle.number} updated"
+            text=(
+                f"Subtitle {subtitle.number} "
+                f"of {len(self.subtitles)}   |   "
+                f"Modified"
+            )
+        )
+        preview = subtitle.text.replace(
+            "\n",
+            " "
         )
 
+        if len(preview) > 45:
+            preview = preview[:45] + "..."
+
+        self.subtitle_tree.item(
+            str(self.current_index),
+            values=(
+                subtitle.start,
+                subtitle.end,
+                preview
+            )
+        )
 
     def previous_subtitle(self):
 
@@ -495,4 +571,16 @@ class SubtitleEditorTab(tk.Frame):
             str(self.current_index)
         )
 
-        self.on_select(None)          
+        self.on_select(None)
+
+    def text_changed(self, event):
+
+        if self.text_editor.edit_modified():
+
+            self.modified = True
+
+            self.status.config(
+                text="Modified"
+            )
+
+            self.text_editor.edit_modified(False)                  
