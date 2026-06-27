@@ -493,21 +493,29 @@ class GenerateTab(tk.Frame):
 
             self.update_progress(100)
 
+            video_file = self.video_path.get()
+
             srt_file = self.workflow.save(
-                self.video_path.get(),
+                video_file,
                 segments
             )
 
             self.generated_srt = srt_file
 
-            # Notify MainWindow that a new subtitle file is ready
+            # Notify MainWindow that both video and subtitle are ready
             if self.on_srt_created:
 
-                self.after(
-                    0,
-                    lambda:
-                    self.on_srt_created(srt_file) if self.on_srt_created else None
-                )
+                callback = self.on_srt_created
+
+                if callback is not None:
+
+                    self.after(
+                        0,
+                        lambda: callback(
+                            video_file,
+                            srt_file
+                        )
+                    )
 
             self.update_status(
                 "Completed"

@@ -76,10 +76,15 @@ class MainWindow:
 
     def open_generated_srt(
             self,
-            filename):
+            video_file,
+            srt_file):
+
+        self.editor_tab.load_video(
+            video_file
+        )
 
         self.editor_tab.load_file(
-            filename
+            srt_file
         )
 
         self.notebook.select(

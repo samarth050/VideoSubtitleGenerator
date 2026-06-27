@@ -1,13 +1,16 @@
 import os
 import tkinter as tk
 from tkinter import ttk
+from services.subtitle_validator import (
+    SubtitleValidator
+)
 
 from services.subtitle_parser import (
     SubtitleParser,
     SubtitleEntry
 )
 from tkinter import filedialog
-
+from video.video_player import VideoPlayer
 from tkinter import messagebox
 
 from tkinter.scrolledtext import ScrolledText
@@ -82,6 +85,33 @@ class SubtitleEditorTab(tk.Frame):
             button_frame,
             text="Save As",
             command=self.save_as
+        ).pack(
+            side=tk.LEFT,
+            padx=5
+        )
+
+        tk.Button(
+            button_frame,
+            text="Validate",
+            command=self.validate_subtitles
+        ).pack(
+            side=tk.LEFT,
+            padx=5
+        )
+
+        tk.Button(
+            button_frame,
+            text="Find",
+            command=self.find_text
+        ).pack(
+            side=tk.LEFT,
+            padx=5
+        )
+
+        tk.Button(
+            button_frame,
+            text="Replace",
+            command=self.replace_text
         ).pack(
             side=tk.LEFT,
             padx=5
@@ -202,13 +232,95 @@ class SubtitleEditorTab(tk.Frame):
             "<Double-1>",
             self.on_select
         )
+
+        # =================================================
+        # CENTER PANEL
+        # =================================================
+        center = tk.Frame(self.paned)
+        self.paned.add(
+            center,
+            width=450
+        )
+
+        tk.Label(
+            center,
+            text="Video Preview",
+            font=("Segoe UI", 10, "bold")
+        ).pack(
+            pady=5
+        )
+        self.video_player = VideoPlayer(
+            center
+        )
+
+        self.video_player.pack(
+            fill="both",
+            expand=True,
+            padx=10,
+            pady=5
+        )
+
+        self.video_time = tk.Label(
+            center,
+            text="00:00:00.000"
+        )
+
+        self.video_time.pack(
+            pady=5
+        )
+
+        controls = tk.Frame(center)
+
+        controls.pack(
+            pady=5
+        )
+
+        tk.Button(
+            controls,
+            text="◀",
+            width=4
+        ).pack(
+            side=tk.LEFT,
+            padx=2
+        )
+
+        tk.Button(
+            controls,
+            text="▶",
+            width=4
+        ).pack(
+            side=tk.LEFT,
+            padx=2
+        )
+
+        tk.Button(
+            controls,
+            text="⏸",
+            width=4
+        ).pack(
+            side=tk.LEFT,
+            padx=2
+        )
+
+        tk.Button(
+            controls,
+            text="■",
+            width=4
+        ).pack(
+            side=tk.LEFT,
+            padx=2
+        )
+
         # =================================================
         # RIGHT PANEL
         # =================================================
 
         right = tk.Frame(self.paned)
 
-        self.paned.add(right)
+        self.paned.add(
+            right,
+            width=450
+        )
 
         tk.Label(
             right,
@@ -237,10 +349,12 @@ class SubtitleEditorTab(tk.Frame):
 
         self.start_var = tk.StringVar()
 
-        tk.Entry(
+        self.start_entry = tk.Entry(
             right,
             textvariable=self.start_var
-        ).pack(
+        )
+
+        self.start_entry.pack(
             fill="x"
         )
 
@@ -254,10 +368,12 @@ class SubtitleEditorTab(tk.Frame):
 
         self.end_var = tk.StringVar()
 
-        tk.Entry(
+        self.end_entry = tk.Entry(
             right,
             textvariable=self.end_var
-        ).pack(
+        )
+
+        self.end_entry.pack(
             fill="x"
         )
 
@@ -459,8 +575,103 @@ class SubtitleEditorTab(tk.Frame):
 
             self.save()
 
+    def validate_subtitles(self):
+
+        self.save_current()
+
+        report = SubtitleValidator.validate(
+            self.subtitles
+        )
+
+        if report.valid:
+
+            messagebox.showinfo(
+                "Validation",
+                "No validation errors found."
+            )
+
+            self.status.config(
+                text="Validation successful"
+            )
+
+            return
+
+        first = report.issues[0]
+
+        subtitle_number = first.subtitle_number
+
+        if first.field == "start":
+
+            self.start_entry.configure(
+                bg="#ffd6d6"
+            )
+
+        elif first.field == "end":
+
+            self.end_entry.configure(
+                bg="#ffd6d6"
+            )
+
+        elif first.field == "text":
+
+            self.text_editor.configure(
+                bg="#fff0d6"
+            )
+
+
+        message = "\n\n".join(
+
+            f"[{issue.severity}] "
+            f"Subtitle {issue.subtitle_number}\n"
+            f"Issue : {issue.message}\n"
+            f"Suggested Fix : {issue.suggested_fix}"
+
+            for issue in report.issues
+
+        )
+
+        messagebox.showwarning(
+            "Validation Report",
+            message
+        )
+
+        for index, subtitle in enumerate(self.subtitles):
+
+            if subtitle.number == subtitle_number:
+
+                self.subtitle_tree.selection_set(
+                    str(index)
+                )
+
+                self.subtitle_tree.see(
+                    str(index)
+                )
+
+                self.on_select(None)
+
+                break
+
+        self.status.config(
+            text=f"{len(report.issues)} validation issue(s) ({report.error_count} errors)"
+        )
+
+
+    def find_text(self):
+        pass
+
+
+    def replace_text(self):
+        pass
 
     def on_select(self, event):
+
+        self.start_entry.configure(
+            bg="white"
+        )
+
+        self.end_entry.configure(
+            bg="white"
+        )
 
         if self.current_index != -1:
             self.save_current()   
@@ -476,6 +687,14 @@ class SubtitleEditorTab(tk.Frame):
         subtitle = self.subtitles[
             self.current_index
         ]
+
+        milliseconds = SubtitleParser.timestamp_to_ms(
+            subtitle.start
+        )
+
+        self.video_player.seek(
+            milliseconds
+        )
 
         self.number_var.set(
             subtitle.number
@@ -536,6 +755,7 @@ class SubtitleEditorTab(tk.Frame):
         self.subtitle_tree.item(
             str(self.current_index),
             values=(
+                subtitle.number,
                 subtitle.start,
                 subtitle.end,
                 preview
@@ -583,4 +803,12 @@ class SubtitleEditorTab(tk.Frame):
                 text="Modified"
             )
 
-            self.text_editor.edit_modified(False)                  
+            self.text_editor.edit_modified(False)
+
+    def load_video(
+            self,
+            filename):
+
+        self.video_player.load_video(
+            filename
+        )                              

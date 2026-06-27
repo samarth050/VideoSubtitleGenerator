@@ -49,3 +49,29 @@ class SubtitleParser:
             )
 
         return subtitles
+    
+    @staticmethod
+    def timestamp_to_ms(
+            timestamp):
+
+        hh, mm, rest = timestamp.split(":")
+
+        ss, ms = rest.split(",")
+
+        return (
+
+            int(hh) * 3600000
+
+            +
+
+            int(mm) * 60000
+
+            +
+
+            int(ss) * 1000
+
+            +
+
+            int(ms)
+
+        )    
