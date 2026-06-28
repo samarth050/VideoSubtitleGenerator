@@ -148,6 +148,13 @@ class VideoPlayer(tk.Frame):
             media
         )
 
+        self.player.play()
+
+        self.after(
+            300,
+            self.finish_loading
+        )
+
         self.status.config(
             text="Video Loaded"
         )
@@ -156,14 +163,31 @@ class VideoPlayer(tk.Frame):
             text="00:00:00.000"
         )
 
+    def finish_loading(self):
+
+        self.player.pause()
+
+        duration = self.duration()
+
+        print(duration)
+
     def seek(
             self,
             milliseconds):
 
         state = self.player.get_state()
 
-        if state != getattr(vlc.State, "NothingSpecial", 0):
-            self.player.set_time(milliseconds)
+        #
+        # Only seek if media exists
+        #
+
+        if state != vlc.State(0):
+
+            self.player.set_time(
+                milliseconds
+            )
+        
+        self.player.pause()
 
         self.position.config(
             text=TimeCode.format(
@@ -172,7 +196,7 @@ class VideoPlayer(tk.Frame):
         )
 
         self.status.config(
-            text="Seek"
+            text=f"Seek : {TimeCode.format(milliseconds)}"
         )
 
     def play(self):
