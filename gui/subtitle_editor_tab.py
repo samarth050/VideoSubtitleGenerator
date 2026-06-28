@@ -4,7 +4,7 @@ from tkinter import ttk
 from services.subtitle_validator import (
     SubtitleValidator
 )
-
+from video.video_controller import VideoController
 from services.subtitle_parser import (
     SubtitleParser,
     SubtitleEntry
@@ -252,7 +252,10 @@ class SubtitleEditorTab(tk.Frame):
         self.video_player = VideoPlayer(
             center
         )
-
+        self.video_controller = VideoController(
+            self.video_player
+        )
+        
         self.video_player.pack(
             fill="both",
             expand=True,
@@ -809,6 +812,6 @@ class SubtitleEditorTab(tk.Frame):
             self,
             filename):
 
-        self.video_player.load_video(
+        self.video_controller.load(
             filename
-        )                              
+        )
