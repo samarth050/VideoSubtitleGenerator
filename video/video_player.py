@@ -24,6 +24,12 @@ class VideoPlayer(tk.Frame):
 
         self.build_ui()
 
+        self.after(
+            200,
+            self.update_position
+        )
+
+
     def build_ui(self):
 
         self.video_area = tk.Frame(
@@ -154,9 +160,10 @@ class VideoPlayer(tk.Frame):
             self,
             milliseconds):
 
-        self.player.set_time(
-            milliseconds
-        )
+        state = self.player.get_state()
+
+        if state != getattr(vlc.State, "NothingSpecial", 0):
+            self.player.set_time(milliseconds)
 
         self.position.config(
             text=TimeCode.format(
@@ -198,12 +205,29 @@ class VideoPlayer(tk.Frame):
 
 
     def current_time(self):
-        return 0
+
+        return self.player.get_time()
 
 
     def duration(self):
-        return 0
+
+        return self.player.get_length()
 
 
     def previous(self):
-        pass    
+        pass
+
+    def update_position(self):
+
+        milliseconds = self.current_time()
+
+        if milliseconds >= 0:
+
+            self.position.config(
+                text=TimeCode.format(milliseconds)
+            )
+
+        self.after(
+            200,
+            self.update_position
+        )

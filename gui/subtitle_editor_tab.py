@@ -4,6 +4,7 @@ from tkinter import ttk
 from services.subtitle_validator import (
     SubtitleValidator
 )
+from video.timecode import TimeCode
 from video.video_controller import VideoController
 from services.subtitle_parser import (
     SubtitleParser,
@@ -691,11 +692,11 @@ class SubtitleEditorTab(tk.Frame):
             self.current_index
         ]
 
-        milliseconds = SubtitleParser.timestamp_to_ms(
+        milliseconds = TimeCode.timestamp_to_ms(
             subtitle.start
         )
 
-        self.video_player.seek(
+        self.video_controller.seek(
             milliseconds
         )
 
