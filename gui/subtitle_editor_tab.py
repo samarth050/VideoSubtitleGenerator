@@ -24,13 +24,70 @@ class SubtitleEditorTab(tk.Frame):
         super().__init__(parent)
 
         self.current_file = None
+        self.current_video = None
 
         self.modified = False
         self.subtitles = []
 
-        self.current_index = -1        
+        self.current_index = -1
+        self.updating_from_video = False                
 
         self.build_ui()
+
+        #
+        # Synchronization
+        #
+
+        self.current_highlight = -1
+
+        self.updating_from_video = False
+
+        self.after(
+            250,
+            self.update_video_position
+        )
+
+    def highlight_current_subtitle(
+            self,
+            milliseconds):
+
+        for index, subtitle in enumerate(self.subtitles):
+
+            start = TimeCode.timestamp_to_ms(
+                subtitle.start
+            )
+
+            end = TimeCode.timestamp_to_ms(
+                subtitle.end
+            )
+
+            if start <= milliseconds <= end:
+
+                if index == self.current_highlight:
+
+                    return
+
+                self.current_highlight = index
+
+                self.updating_from_video = True
+
+                self.subtitle_tree.selection_set(
+                    str(index)
+                )
+
+                self.subtitle_tree.focus(
+                    str(index)
+                )
+
+                self.subtitle_tree.see(
+                    str(index)
+                )
+
+                self.on_select(None)
+
+                self.updating_from_video = False
+
+                return
 
     def build_ui(self):
 
@@ -66,8 +123,17 @@ class SubtitleEditorTab(tk.Frame):
 
         tk.Button(
             button_frame,
-            text="Browse",
-            command=self.browse
+            text="Open Video",
+            command=self.browse_video
+        ).pack(
+            side=tk.LEFT,
+            padx=5
+        )
+
+        tk.Button(
+            button_frame,
+            text="Open Subtitle",
+            command=self.browse_subtitle
         ).pack(
             side=tk.LEFT,
             padx=5
@@ -455,7 +521,100 @@ class SubtitleEditorTab(tk.Frame):
             fill="x"
         )
 
-    def browse(self):
+    def browse_video(self):
+
+        filename = filedialog.askopenfilename(
+
+            title="Open Video",
+
+            filetypes=[
+
+                (
+                    "Video Files",
+
+                    "*.mp4 *.mkv *.avi *.mov *.wmv *.mpeg *.mpg"
+                ),
+
+                ("All Files", "*.*")
+
+            ]
+
+        )
+
+        if not filename:
+
+            return
+
+        self.load_video(filename)
+
+    def update_video_position(self):
+
+        try:
+
+            if (
+                self.video_controller.is_playing()
+                and
+                self.subtitles
+            ):
+
+                milliseconds = (
+                    self.video_controller.current_time()
+                )
+
+                self.highlight_playing_subtitle(
+                    milliseconds
+                )
+
+        finally:
+
+            self.after(
+                250,
+                self.update_video_position
+            )
+
+    def highlight_playing_subtitle(
+            self,
+            milliseconds):
+
+        for index, subtitle in enumerate(self.subtitles):
+
+            start = TimeCode.timestamp_to_ms(
+                subtitle.start
+            )
+
+            end = TimeCode.timestamp_to_ms(
+                subtitle.end
+            )
+
+            if start <= milliseconds <= end:
+
+                if index == self.current_highlight:
+                    return
+
+                self.current_highlight = index
+
+                self.updating_from_video = True
+
+                self.subtitle_tree.selection_set(
+                    str(index)
+                )
+
+                self.subtitle_tree.focus(
+                    str(index)
+                )
+
+                self.subtitle_tree.see(
+                    str(index)
+                )
+
+                self.load_subtitle(index)
+
+                self.updating_from_video = False
+
+                return
+
+
+    def browse_subtitle(self):
 
         filename = filedialog.askopenfilename(
 
@@ -522,6 +681,14 @@ class SubtitleEditorTab(tk.Frame):
             self.subtitle_tree.selection_set("0")
 
             self.on_select(None)
+
+        video = self.find_matching_video(
+            filename
+        )
+
+        if video:
+
+            self.load_video(video)            
 
     def save(self):
 
@@ -669,6 +836,10 @@ class SubtitleEditorTab(tk.Frame):
 
     def on_select(self, event):
 
+        if self.updating_from_video:
+
+            return
+
         self.start_entry.configure(
             bg="white"
         )
@@ -813,6 +984,81 @@ class SubtitleEditorTab(tk.Frame):
             self,
             filename):
 
+        self.current_video = filename
+
         self.video_controller.load(
             filename
         )
+
+    def load_subtitle(
+            self,
+            index):
+
+        subtitle = self.subtitles[index]
+
+        self.number_var.set(
+            subtitle.number
+        )
+
+        self.start_var.set(
+            subtitle.start
+        )
+
+        self.end_var.set(
+            subtitle.end
+        )
+
+        self.text_editor.delete(
+            "1.0",
+            tk.END
+        )
+
+        self.text_editor.insert(
+            "1.0",
+            subtitle.text
+        )
+
+        self.status.config(
+            text=
+            f"Subtitle "
+            f"{subtitle.number} "
+            f"of "
+            f"{len(self.subtitles)}"
+        )
+
+    def find_matching_video(
+            self,
+            subtitle_file):
+
+        folder = os.path.dirname(
+            subtitle_file
+        )
+
+        base = os.path.splitext(
+            os.path.basename(subtitle_file)
+        )[0]
+
+        extensions = [
+
+            ".mp4",
+            ".mkv",
+            ".avi",
+            ".mov",
+            ".wmv",
+            ".mpeg",
+            ".mpg"
+
+        ]
+
+        for ext in extensions:
+
+            candidate = os.path.join(
+                folder,
+                base + ext
+            )
+
+            if os.path.exists(candidate):
+
+                return candidate
+
+        return None

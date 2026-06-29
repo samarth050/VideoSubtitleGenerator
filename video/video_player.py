@@ -243,15 +243,30 @@ class VideoPlayer(tk.Frame):
 
     def update_position(self):
 
-        milliseconds = self.current_time()
+        #
+        # Update only the time display.
+        #
+
+        milliseconds = self.player.get_time()
 
         if milliseconds >= 0:
 
             self.position.config(
-                text=TimeCode.format(milliseconds)
+                text=TimeCode.format(
+                    milliseconds
+                )
             )
+
+        #
+        # Continue updating every 200 ms.
+        #
 
         self.after(
             200,
             self.update_position
         )
+
+
+    def is_playing(self):
+
+        return self.player.is_playing()        

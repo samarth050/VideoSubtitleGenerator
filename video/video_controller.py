@@ -40,3 +40,15 @@ class VideoController:
         self.player.seek(
             milliseconds
         )
+
+    def current_time(self):
+
+        return self.player.current_time()
+
+    def duration(self):
+
+        return self.player.duration()
+    
+    def is_playing(self):
+
+        return self.player.is_playing()    
