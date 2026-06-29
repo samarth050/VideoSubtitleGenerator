@@ -1,3 +1,4 @@
+from fileinput import filename
 import os
 import tkinter as tk
 from tkinter import ttk
@@ -639,7 +640,7 @@ class SubtitleEditorTab(tk.Frame):
     def load_file(
             self,
             filename):
-
+        self.current_file = filename
         self.project.subtitle_file = filename
 
         self.file_label.config(
@@ -1034,16 +1035,13 @@ class SubtitleEditorTab(tk.Frame):
             self,
             subtitle_file):
 
-        folder = os.path.dirname(
-            subtitle_file
-        )
+        folder = os.path.dirname(subtitle_file)
 
-        base = os.path.splitext(
+        subtitle_name = os.path.splitext(
             os.path.basename(subtitle_file)
-        )[0]
+        )[0].lower()
 
-        extensions = [
-
+        video_extensions = (
             ".mp4",
             ".mkv",
             ".avi",
@@ -1051,18 +1049,42 @@ class SubtitleEditorTab(tk.Frame):
             ".wmv",
             ".mpeg",
             ".mpg"
+        )
 
-        ]
+        #
+        # Search every video in the folder
+        #
 
-        for ext in extensions:
+        for filename in os.listdir(folder):
 
-            candidate = os.path.join(
-                folder,
-                base + ext
-            )
+            name, ext = os.path.splitext(filename)
 
-            if os.path.exists(candidate):
+            if ext.lower() not in video_extensions:
 
-                return candidate
+                continue
+
+            video_name = name.lower()
+
+            #
+            # Exact match
+            #
+
+            if video_name == subtitle_name:
+
+                return os.path.join(
+                    folder,
+                    filename
+                )
+
+            #
+            # Subtitle starts with video name
+            #
+
+            if subtitle_name.startswith(video_name):
+
+                return os.path.join(
+                    folder,
+                    filename
+                )
 
         return None
