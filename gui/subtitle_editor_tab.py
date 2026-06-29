@@ -19,10 +19,14 @@ from tkinter.scrolledtext import ScrolledText
 
 class SubtitleEditorTab(tk.Frame):
 
-    def __init__(self, parent):
+    def __init__(
+            self,
+            parent,
+            project):
 
         super().__init__(parent)
 
+        self.project = project
         self.current_file = None
         self.current_video = None
 
@@ -636,16 +640,16 @@ class SubtitleEditorTab(tk.Frame):
             self,
             filename):
 
-        self.current_file = filename
+        self.project.subtitle_file = filename
 
         self.file_label.config(
             text=filename
         )
 
-        self.subtitles = SubtitleParser.load(
+        self.project.subtitles = SubtitleParser.load(
             filename
         )
-
+        self.subtitles = self.project.subtitles
         self.subtitle_tree.delete(
             *self.subtitle_tree.get_children()
         )
@@ -742,7 +746,7 @@ class SubtitleEditorTab(tk.Frame):
 
         if filename:
 
-            self.current_file = filename
+            self.project.subtitle_file = filename
 
             self.save()
 
@@ -984,7 +988,7 @@ class SubtitleEditorTab(tk.Frame):
             self,
             filename):
 
-        self.current_video = filename
+        self.project.video_file = filename
 
         self.video_controller.load(
             filename

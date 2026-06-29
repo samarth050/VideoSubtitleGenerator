@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from tkinter.scrolledtext import ScrolledText
-
+from models.subtitle_project import SubtitleProject
 from gui.generate_tab import GenerateTab
 from gui.subtitle_editor_tab import SubtitleEditorTab
 from gui.transcript_tab import TranscriptTab
@@ -12,6 +12,11 @@ class MainWindow:
 
     def __init__(self, root):
 
+        #
+        # Current Project
+        #
+
+        self.project = SubtitleProject()
         self.root = root
 
         root.title("Video Subtitle Generator")
@@ -30,7 +35,8 @@ class MainWindow:
         )
 
         self.editor_tab = SubtitleEditorTab(
-            self.notebook
+            self.notebook,
+            self.project
         )
 
         self.generate_tab.on_srt_created = (
