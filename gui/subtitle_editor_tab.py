@@ -96,24 +96,220 @@ class SubtitleEditorTab(tk.Frame):
 
     def build_ui(self):
 
-        # -------------------------------------------------
-        # Subtitle File
-        # -------------------------------------------------
+        #
+        # ----------------------------------------------------------
+        # Project Information
+        # ----------------------------------------------------------
+        #
 
-        tk.Label(
-            self,
-            text="Subtitle File"
-        ).pack(pady=5)
+        project_frame = tk.LabelFrame(
 
-        self.file_label = tk.Label(
             self,
-            text="No subtitle loaded",
-            anchor="w"
+
+            text="Current Project"
+
         )
 
-        self.file_label.pack(
+        project_frame.pack(
+
             fill="x",
-            padx=10
+
+            padx=10,
+
+            pady=5
+
+        )
+
+        #
+        # Video
+        #
+
+        tk.Label(
+
+            project_frame,
+
+            text="Video :",
+
+            width=12,
+
+            anchor="w"
+
+        ).grid(
+
+            row=0,
+
+            column=0,
+
+            padx=5,
+
+            pady=2,
+
+            sticky="w"
+
+        )
+
+        self.video_label = tk.Label(
+
+            project_frame,
+
+            text="No video loaded",
+
+            anchor="w"
+
+        )
+
+        self.video_label.grid(
+
+            row=0,
+
+            column=1,
+
+            sticky="w"
+
+        )
+
+        #
+        # Subtitle
+        #
+
+        tk.Label(
+
+            project_frame,
+
+            text="Subtitle :",
+
+            width=12,
+
+            anchor="w"
+
+        ).grid(
+
+            row=1,
+
+            column=0,
+
+            padx=5,
+
+            pady=2,
+
+            sticky="w"
+
+        )
+
+        self.subtitle_label = tk.Label(
+
+            project_frame,
+
+            text="No subtitle loaded",
+
+            anchor="w"
+
+        )
+
+        self.subtitle_label.grid(
+
+            row=1,
+
+            column=1,
+
+            sticky="w"
+
+        )
+
+        #
+        # Folder
+        #
+
+        tk.Label(
+
+            project_frame,
+
+            text="Folder :",
+
+            width=12,
+
+            anchor="w"
+
+        ).grid(
+
+            row=2,
+
+            column=0,
+
+            padx=5,
+
+            pady=2,
+
+            sticky="w"
+
+        )
+
+        self.folder_label = tk.Label(
+
+            project_frame,
+
+            text="",
+
+            anchor="w"
+
+        )
+
+        self.folder_label.grid(
+
+            row=2,
+
+            column=1,
+
+            sticky="w"
+
+        )
+
+        #
+        # Project Status
+        #
+
+        tk.Label(
+
+            project_frame,
+
+            text="Status :",
+
+            width=12,
+
+            anchor="w"
+
+        ).grid(
+
+            row=3,
+
+            column=0,
+
+            padx=5,
+
+            pady=2,
+
+            sticky="w"
+
+        )
+
+        self.project_status = tk.Label(
+
+            project_frame,
+
+            text="Ready",
+
+            anchor="w"
+
+        )
+
+        self.project_status.grid(
+
+            row=3,
+
+            column=1,
+
+            sticky="w"
+
         )
 
         # -------------------------------------------------
@@ -643,8 +839,12 @@ class SubtitleEditorTab(tk.Frame):
         self.current_file = filename
         self.project.subtitle_file = filename
 
-        self.file_label.config(
-            text=filename
+        self.subtitle_label.config(
+            text=os.path.basename(filename)
+        )
+
+        self.folder_label.config(
+            text=os.path.dirname(filename)
         )
 
         self.project.subtitles = SubtitleParser.load(
