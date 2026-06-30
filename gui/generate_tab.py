@@ -526,14 +526,68 @@ class GenerateTab(tk.Frame):
                         "Cancelled"
                     )
 
-                    self.after(
-                        0,
-                        lambda:
-                        messagebox.showinfo(
+                    #
+                    # Ask whether to save the work completed so far.
+                    #
+
+                    if len(segments) >= 5:
+
+                        save_partial = messagebox.askyesno(
+
                             "Cancelled",
-                            "Subtitle generation cancelled."
+
+                            "Subtitle generation was cancelled.\n\n"
+                            "Do you want to save the subtitles generated so far?"
+
                         )
-                    )
+
+                        if save_partial:
+
+                            video_file = self.video_path.get()
+
+                            srt_file = self.workflow.save(
+
+                                video_file,
+
+                                segments
+
+                            )
+
+                            self.generated_srt = srt_file
+
+                            self.after(
+
+                                0,
+
+                                lambda:
+
+                                messagebox.showinfo(
+
+                                    "Partial Subtitle Saved",
+
+                                    f"Partial subtitle saved:\n\n{srt_file}"
+
+                                )
+
+                            )
+
+                    else:
+
+                        self.after(
+
+                            0,
+
+                            lambda:
+
+                            messagebox.showinfo(
+
+                                "Cancelled",
+
+                                "Subtitle generation cancelled."
+
+                            )
+
+                        )
 
                     return
 
