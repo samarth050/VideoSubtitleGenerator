@@ -38,6 +38,11 @@ class GenerateTab(tk.Frame):
         self.start_time: float | None = None
         self.generated_srt = None
         self.on_srt_created = None
+        #
+        # Cancellation
+        #
+
+        self.cancel_requested = False        
         # ---------------------------------
         # Build User Interface
         # ---------------------------------
@@ -114,6 +119,25 @@ class GenerateTab(tk.Frame):
 
         self.generate_btn.pack(
             side=tk.LEFT,
+            padx=5
+        )
+
+        self.cancel_btn = tk.Button(
+
+            button_frame,
+
+            text="Cancel",
+
+            command=self.cancel_transcription,
+
+            state="disabled"
+
+        )
+
+        self.cancel_btn.pack(
+
+            side=tk.LEFT,
+
             padx=5
         )
 
@@ -370,6 +394,18 @@ class GenerateTab(tk.Frame):
             state="normal"
         )
 
+    def cancel_transcription(self):
+
+        self.cancel_requested = True
+
+        self.cancel_btn.config(
+            state="disabled"
+        )
+
+        self.update_status(
+            "Cancelling..."
+        )
+
     def start_transcription(self):
 
         if not self.video_path.get():
@@ -388,6 +424,12 @@ class GenerateTab(tk.Frame):
 
         self.generate_btn.config(
             state="disabled"
+        )
+
+        self.cancel_requested = False
+
+        self.cancel_btn.config(
+            state="normal"
         )
 
         thread = threading.Thread(
@@ -474,6 +516,27 @@ class GenerateTab(tk.Frame):
             self.update_progress(0)
             for segment in segments_generator:
 
+                #
+                # User pressed Cancel
+                #
+
+                if self.cancel_requested:
+
+                    self.update_status(
+                        "Cancelled"
+                    )
+
+                    self.after(
+                        0,
+                        lambda:
+                        messagebox.showinfo(
+                            "Cancelled",
+                            "Subtitle generation cancelled."
+                        )
+                    )
+
+                    return
+
                 segments.append(segment)
 
                 percent = (
@@ -481,6 +544,7 @@ class GenerateTab(tk.Frame):
                 ) * 100
 
                 self.update_progress(percent)
+
                 self.update_time(percent)
 
                 self.update_status(
@@ -490,7 +554,9 @@ class GenerateTab(tk.Frame):
                 self.add_preview_text(
                     segment.text.strip()
                 )
+            if self.cancel_requested:
 
+                return
             self.update_progress(100)
 
             video_file = self.video_path.get()
@@ -560,10 +626,17 @@ class GenerateTab(tk.Frame):
 
         finally:
 
-            self.after(
-                0,
-                lambda:
+            def finish():
+
                 self.generate_btn.config(
                     state="normal"
                 )
+
+                self.cancel_btn.config(
+                    state="disabled"
+                )
+
+            self.after(
+                0,
+                finish
             )

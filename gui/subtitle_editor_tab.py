@@ -1,4 +1,3 @@
-from fileinput import filename
 import os
 import tkinter as tk
 from tkinter import ttk
@@ -7,10 +6,8 @@ from services.subtitle_validator import (
 )
 from video.timecode import TimeCode
 from video.video_controller import VideoController
-from services.subtitle_parser import (
-    SubtitleParser,
-    SubtitleEntry
-)
+from services.subtitle_parser import SubtitleParser
+
 from tkinter import filedialog
 from video.video_player import VideoPlayer
 from tkinter import messagebox
@@ -35,17 +32,16 @@ class SubtitleEditorTab(tk.Frame):
         self.subtitles = []
 
         self.current_index = -1
-        self.updating_from_video = False                
-
-        self.build_ui()
 
         #
-        # Synchronization
+        # Playback synchronization
         #
 
         self.current_highlight = -1
 
         self.updating_from_video = False
+
+        self.build_ui()
 
         self.after(
             250,
